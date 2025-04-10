@@ -1,0 +1,56 @@
+version: "3.1"
+services:
+  database:
+    image: mariadb
+    restart: unless-stopped
+    environment:
+      MARIADB_ROOT_PASSWORD: ""
+      MARIADB_USER: "minecraft"
+      MARIADB_PASSWORD: ""
+      MARIADB_DATABASE: "minecraft"
+    volumes:
+      - ./data/mysql:/var/lib/mysql
+      - ./data/mysqld:/run/mysqld
+  proxy:
+    image: itzg/mc-proxy
+    environment:
+      TYPE: "VELOCITY"
+      CFG_MOTD: "A Minecraft Server"
+      #REPLACE_ENV_VARIABLES: "true"
+    ports:
+      - "25565:25577"
+# ONLY NEEDED FOR VOICECHAT PLUGIN
+#      - "24454:24454/udp"
+#      - "8192:8192"
+    tty: true
+    stdin_open: true
+    depends_on:
+      - database
+    restart: unless-stopped
+    volumes:
+      - ./data/minecraft/proxy-config:/config
+      - ./data/minecraft/proxy:/server
+      - ./data/mysqld:/var/run/mysqld
+
+##################################
+# A Paper server running 1.21.4  #
+##################################
+  smp:
+    image: itzg/minecraft-server:stable
+    environment:
+      EULA: "TRUE"
+      TYPE: "PAPER"
+      VERSION: "1.21.4"
+#      PAPER_CHANNEL: "experimental"
+      MEMORY: "4G"
+# ONLY REQUIRED IF RUNNING VOICE CHAT PLUGIN
+#    ports:
+#      - 24454:24454
+    tty: true
+    stdin_open: true
+    depends_on:
+      - database
+    restart: unless-stopped
+    volumes:
+      - ./data/minecraft/smp:/data
+      - ./data/mysqld:/var/run/mysqld
